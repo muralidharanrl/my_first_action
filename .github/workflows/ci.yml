@@ -10,11 +10,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repository
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup PHP
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -22,24 +20,16 @@ jobs:
           extensions: mbstring, bcmath, xml, ctype, json, tokenizer, pdo, sqlite
           tools: composer
 
-      # 3️⃣ Install Composer dependencies
       - name: Install Composer dependencies
-        working-directory: laravel-cicd
         run: composer install --prefer-dist --no-progress --no-interaction
 
-      # 4️⃣ Prepare environment file
       - name: Copy .env file
-        working-directory: laravel-cicd
         run: cp .env.example .env
 
-      # 5️⃣ Generate app key
       - name: Generate application key
-        working-directory: laravel-cicd
         run: php artisan key:generate
 
-      # 6️⃣ Run tests
       - name: Run tests
-        working-directory: laravel-cicd
         env:
           DB_CONNECTION: sqlite
           DB_DATABASE: ":memory:"
