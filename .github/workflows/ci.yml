@@ -20,6 +20,14 @@ jobs:
           extensions: mbstring, bcmath, xml, ctype, json, tokenizer, pdo, sqlite
           tools: composer
 
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
       - name: Install Composer dependencies
         run: composer install --prefer-dist --no-progress --no-interaction
 
