@@ -20,17 +20,17 @@ jobs:
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping -h localhost -psecret"
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -psecret"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
 
     steps:
-      # 1️⃣ Checkout repository
+      # 1️⃣ Checkout
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup PHP (Laravel 12 requires PHP 8.2+)
+      # 2️⃣ PHP setup (Laravel 12 → PHP 8.2)
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -38,7 +38,7 @@ jobs:
           extensions: mbstring, bcmath, xml, ctype, json, tokenizer, pdo, pdo_mysql
           tools: composer
 
-      # 3️⃣ Cache Composer dependencies
+      # 3️⃣ Composer cache
       - name: Cache Composer dependencies
         uses: actions/cache@v4
         with:
@@ -47,30 +47,30 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-composer-
 
-      # 4️⃣ Install Composer dependencies
+      # 4️⃣ Install dependencies
       - name: Install Composer dependencies
         run: composer install --prefer-dist --no-progress --no-interaction
 
-      # 5️⃣ Prepare environment
+      # 5️⃣ App setup
       - name: Copy .env file
         run: cp .env.example .env
 
       - name: Generate application key
         run: php artisan key:generate
 
-      # 6️⃣ Code style check (Laravel Pint)
-      - name: Run Laravel Pint (code style)
+      # 6️⃣ Pint
+      - name: Run Laravel Pint
         run: ./vendor/bin/pint --test
 
-      # 7️⃣ Install MySQL client (needed for mysqladmin)
+      # 7️⃣ MySQL client
       - name: Install MySQL client
         run: sudo apt-get update && sudo apt-get install -y mysql-client
 
-      # 8️⃣ Wait for MySQL service to be ready
+      # 8️⃣ Wait for MySQL on localhost
       - name: Wait for MySQL
         run: |
           for i in {1..30}; do
-            if mysqladmin ping -h mysql -ularavel -psecret --silent; then
+            if mysqladmin ping -h 127.0.0.1 -ularavel -psecret --silent; then
               echo "MySQL is ready!"
               break
             fi
@@ -78,11 +78,11 @@ jobs:
             sleep 2
           done
 
-      # 9️⃣ Run migrations & tests
+      # 9️⃣ Migrate & test
       - name: Run tests (MySQL)
         env:
           DB_CONNECTION: mysql
-          DB_HOST: mysql
+          DB_HOST: 127.0.0.1
           DB_PORT: 3306
           DB_DATABASE: laravel_test
           DB_USERNAME: laravel
