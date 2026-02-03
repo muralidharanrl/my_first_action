@@ -90,3 +90,19 @@ jobs:
         run: |
           php artisan migrate --force
           php artisan test
+
+  deploy:
+    needs: tests
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Dry-run deploy
+        run: |
+          echo "🚀 Deploy job started"
+          echo "Branch        : $GITHUB_REF"
+          echo "Commit SHA   : $GITHUB_SHA"
+          echo "Actor        : $GITHUB_ACTOR"
+          echo "Repo         : $GITHUB_REPOSITORY"
+          echo "Time         : $(date)"
+          echo "✅ This is a DRY-RUN. No server was harmed."
