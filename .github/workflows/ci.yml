@@ -23,12 +23,14 @@ jobs:
           --health-cmd="mysqladmin ping -h localhost -psecret"
           --health-interval=10s
           --health-timeout=5s
-          --health-retries=3
+          --health-retries=5
 
     steps:
+      # 1️⃣ Checkout repository
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2️⃣ Setup PHP (Laravel 12 requires PHP 8.2+)
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -36,6 +38,7 @@ jobs:
           extensions: mbstring, bcmath, xml, ctype, json, tokenizer, pdo, pdo_mysql
           tools: composer
 
+      # 3️⃣ Cache Composer dependencies
       - name: Cache Composer dependencies
         uses: actions/cache@v4
         with:
@@ -44,18 +47,38 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-composer-
 
+      # 4️⃣ Install Composer dependencies
       - name: Install Composer dependencies
         run: composer install --prefer-dist --no-progress --no-interaction
 
+      # 5️⃣ Prepare environment
       - name: Copy .env file
         run: cp .env.example .env
 
       - name: Generate application key
         run: php artisan key:generate
 
+      # 6️⃣ Code style check (Laravel Pint)
       - name: Run Laravel Pint (code style)
         run: ./vendor/bin/pint --test
 
+      # 7️⃣ Install MySQL client (needed for mysqladmin)
+      - name: Install MySQL client
+        run: sudo apt-get update && sudo apt-get install -y mysql-client
+
+      # 8️⃣ Wait for MySQL service to be ready
+      - name: Wait for MySQL
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h mysql -ularavel -psecret --silent; then
+              echo "MySQL is ready!"
+              break
+            fi
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+
+      # 9️⃣ Run migrations & tests
       - name: Run tests (MySQL)
         env:
           DB_CONNECTION: mysql
