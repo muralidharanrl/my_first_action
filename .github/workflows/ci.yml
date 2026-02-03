@@ -1,4 +1,4 @@
-name: Laravel CI
+name: Laravel CI/CD
 
 on:
   push:
@@ -6,6 +6,9 @@ on:
   pull_request:
 
 jobs:
+  # =========================
+  # CI JOB (GitHub-hosted)
+  # =========================
   tests:
     runs-on: ubuntu-latest
 
@@ -26,11 +29,9 @@ jobs:
           --health-retries=5
 
     steps:
-      # 1️⃣ Checkout
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ PHP setup (Laravel 12 → PHP 8.2)
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -38,7 +39,6 @@ jobs:
           extensions: mbstring, bcmath, xml, ctype, json, tokenizer, pdo, pdo_mysql
           tools: composer
 
-      # 3️⃣ Composer cache
       - name: Cache Composer dependencies
         uses: actions/cache@v4
         with:
@@ -47,26 +47,21 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-composer-
 
-      # 4️⃣ Install dependencies
       - name: Install Composer dependencies
         run: composer install --prefer-dist --no-progress --no-interaction
 
-      # 5️⃣ App setup
-      - name: Copy .env file
+      - name: Copy .env
         run: cp .env.example .env
 
-      - name: Generate application key
+      - name: Generate app key
         run: php artisan key:generate
 
-      # 6️⃣ Pint
       - name: Run Laravel Pint
         run: ./vendor/bin/pint --test
 
-      # 7️⃣ MySQL client
       - name: Install MySQL client
         run: sudo apt-get update && sudo apt-get install -y mysql-client
 
-      # 8️⃣ Wait for MySQL on localhost
       - name: Wait for MySQL
         run: |
           for i in {1..30}; do
@@ -78,8 +73,7 @@ jobs:
             sleep 2
           done
 
-      # 9️⃣ Migrate & test
-      - name: Run tests (MySQL)
+      - name: Run migrations & tests
         env:
           DB_CONNECTION: mysql
           DB_HOST: 127.0.0.1
@@ -91,18 +85,22 @@ jobs:
           php artisan migrate --force
           php artisan test
 
+  # =========================
+  # CD JOB (WSL self-hosted)
+  # =========================
   deploy:
     needs: tests
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, wsl]
     if: github.ref == 'refs/heads/main'
 
     steps:
-      - name: Dry-run deploy
+      - name: Local deploy on WSL (learning mode)
         run: |
-          echo "🚀 Deploy job started"
-          echo "Branch        : $GITHUB_REF"
-          echo "Commit SHA   : $GITHUB_SHA"
-          echo "Actor        : $GITHUB_ACTOR"
-          echo "Repo         : $GITHUB_REPOSITORY"
-          echo "Time         : $(date)"
-          echo "✅ This is a DRY-RUN. No server was harmed."
+          echo "🚀 Deploying on WSL self-hosted runner"
+          echo "User      : $(whoami)"
+          echo "Host      : $(hostname)"
+          echo "Directory : $(pwd)"
+          echo "Time      : $(date)"
+          echo "Files:"
+          ls -la
+          echo "✅ Dry-run deploy completed"
