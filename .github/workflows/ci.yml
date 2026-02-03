@@ -1,4 +1,4 @@
-name: Laravel CI
+\name: Laravel CI
 
 on:
   push:
@@ -36,6 +36,9 @@ jobs:
 
       - name: Generate application key
         run: php artisan key:generate
+
+      - name: Run Laravel Pint (code style)
+        run: ./vendor/bin/pint --test
 
       - name: Run tests
         env:
